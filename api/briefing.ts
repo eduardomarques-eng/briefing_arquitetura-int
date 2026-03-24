@@ -5,15 +5,21 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT || '587');
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM || user;
 
   if (!user || !pass) {
-    return res.status(500).json({ success: false, message: 'Configuração SMTP ausente' });
+    console.error('❌ Erro Crítico Vercel: Variáveis de Ambiente ausentes. Registre SMTP_USER e SMTP_PASS nas configurações do projeto.');
+    return res.status(500).json({ success: false, message: 'Sistema indisponível: Configuração SMTP ausente.' });
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: host,
+    port: port,
+    secure: port === 465,
     auth: { user, pass }
   });
 
