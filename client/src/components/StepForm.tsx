@@ -343,7 +343,7 @@ export const StepForm: React.FC = () => {
         const result = await response.json();
         
         if (!response.ok) {
-          throw new Error(result.message || 'Erro ao enviar formulário');
+          throw new Error(result.error || result.message || 'Erro ao enviar formulário');
         }
         
         toast.success(result.message || 'Recebemos suas informações. Entraremos em contato em breve.');
