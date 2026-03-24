@@ -1,11 +1,11 @@
 import nodemailer from 'nodemailer';
 
 async function sendEmail(data: any) {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT;
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = process.env.SMTP_PORT || '587';
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const fromEmail = process.env.SMTP_FROM;
+  const fromEmail = process.env.SMTP_FROM || user;
 
   console.log("SMTP_HOST:", host);
   console.log("SMTP_USER:", user);
@@ -17,12 +17,23 @@ async function sendEmail(data: any) {
   const transporter = nodemailer.createTransport({
     host: host,
     port: Number(port),
-    secure: false, // Explicit requirement
+    secure: false, // TLS exige false para a porta 587
     auth: {
       user: user,
       pass: pass
-    }
+    },
+    logger: true,
+    debug: true
   });
+
+  // Validar Conexão SMTP rigidamente antes de prosseguir
+  try {
+    await transporter.verify();
+    console.log('✅ Conexão SMTP verificada e logada com sucesso!');
+  } catch (verifyError: any) {
+    console.error("❌ Erro SMTP (Falha de Verificação / Auth):", verifyError);
+    throw new Error(`Falha de Verificação SMTP: ${verifyError.message}`);
+  }
 
   const mappedData = {
     nome: data.clientName || 'Não informado',
@@ -78,7 +89,13 @@ async function sendEmail(data: any) {
     html: html
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("✅ Email disparado silenciosamente (OK).");
+  } catch (sendError: any) {
+    console.error("❌ Erro SMTP (Disparo de Email):", sendError);
+    throw new Error(`Erro no envio do email: ${sendError.message}`);
+  }
 }
 
 export default async function handler(req: any, res: any) {
@@ -91,10 +108,9 @@ export default async function handler(req: any, res: any) {
     await sendEmail(data);
     return res.status(200).json({ success: true, message: "Recebemos suas informações." });
   } catch (error: any) {
-    console.error('Erro no disparador de email:', error);
-    if (error.message === 'Configuração SMTP incompleta') {
-      return res.status(500).json({ error: 'Configuração SMTP incompleta' });
-    }
-    return res.status(500).json({ error: 'Falha ao enviar email' });
+    console.error("Erro SMTP (Rota Principal catch):", error);
+    
+    // Tratamento exigido pelo Prompt: Retornar erro real no backend: { error: error.message }
+    return res.status(500).json({ error: error.message || 'Falha catastrófica no backend' });
   }
 }
