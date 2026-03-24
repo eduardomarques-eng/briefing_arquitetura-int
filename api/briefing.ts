@@ -26,33 +26,105 @@ export default async function handler(req: any, res: any) {
   const data = req.body || {};
 
   const mappedData = {
-    nome: data.clientName || "Não informado",
-    telefone: data.clientPhone || "Não informado",
-    email: data.clientEmail || "Não informado",
-    terreno: 'Possui: ' + (data.hasLand || '') + ' - Área: ' + (data.landArea || '') + ' - Topografia: ' + (data.topography || ''),
-    perfilFamiliar: 'Moradores: ' + (data.familyMembers || '') + ' - Crianças: ' + (data.hasChildren || '') + ' - Pets: ' + (data.hasPets || ''),
-    estiloVida: 'Trabalha de casa: ' + (data.workFromHome || '') + ' - Rotina: ' + (data.weekdayRoutine || ''),
-    necessidades: 'Dormitórios: ' + (data.bedrooms || '') + ' - Suites: ' + (data.suites || '') + ' - Banheiros: ' + (data.bathrooms || ''),
-    investimento: data.budget || "Não informado",
-    expectativas: data.idealHouse || "Não informado",
+    nome: data.clientName || 'Não informado',
+    telefone: data.clientPhone || 'Não informado',
+    email: data.clientEmail || 'Não informado',
+    cidade: data.clientCity || 'Não informado',
+    profissao: data.clientProfession || 'Não informado',
+    objetivo: data.objective || 'Não informado',
+    fase: data.phase || 'Não informado',
+    
+    // Terreno
+    terreno: `Possui: ${data.hasLand || ''} - Área: ${data.landArea || ''} - Topo: ${data.topography || ''}`,
+    orientacaoSolar: data.solarOrientation || 'Não informado',
+    ventilacao: data.naturalVentilation || 'Não informado',
+    restricoes: Array.isArray(data.landRestrictions) ? data.landRestrictions.join(', ') : 'Nenhuma',
+
+    // Família
+    perfilFamiliar: `Moradores: ${data.familyMembers || ''} - Crianças: ${data.hasChildren || ''} - Pets: ${data.hasPets || ''}`,
+    homeOffice: `Trabalha em casa: ${data.worksFromHome || ''} - Necessidade Específica: ${data.homeOfficeNeeds || ''}`,
+    visitas: data.visitFrequency || 'Não informado',
+
+    // Estilo
+    estilo: data.architecturalStyle || 'Não informado',
+    referencias: data.visualReferences || 'Nenhuma',
+    personalizacao: data.customizationLevel || 'Não informado',
+
+    // Necessidades
+    necessidades: `Dormitórios: ${data.bedrooms || ''} - Suites: ${data.suites || ''} - Banheiros: ${data.bathrooms || ''}`,
+    ambientesExtras: Array.isArray(data.extraRooms) ? data.extraRooms.join(', ') : 'Nenhum',
+    vagas: data.garageSpots || 'Não informado',
+
+    // Conforto
+    clima: data.climateControl || 'Não informado',
+    automacao: data.homeAutomation || 'Não informado',
+    acustica: data.acousticIsolation || 'Não informado',
+
+    // Orçamento & Prazos
+    investimento: data.budget || 'Não informado',
+    flexibilidade: data.budgetFlexibility || 'Não informado',
+    prazoInicio: data.startDeadline || 'Não informado',
+    prazoFim: data.completionDeadline || 'Não informado',
+
+    // Prioridades e Sonhos
+    prioridadeMor: data.mainPriority || 'Não informado',
+    indesejados: data.undesiredFeatures || 'Nenhum',
+    expectativas: data.dreamProject || 'Não informado',
+    reuniao: data.wantsMeeting || 'Não informado'
   };
 
   const html = `
-    <h2>Novo Briefing de Arquitetura Recebido</h2>
-    <p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
-    
-    <h3>Dados do Cliente</h3>
-    <p><strong>Nome:</strong> ${mappedData.nome}</p>
-    <p><strong>Telefone:</strong> ${mappedData.telefone}</p>
-    <p><strong>Email:</strong> ${mappedData.email}</p>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Novo Briefing de Arquitetura</h2>
+      <p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+      
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">1. Perfil e Dados de Contato</h3>
+      <p><strong>Nome:</strong> ${mappedData.nome}</p>
+      <p><strong>Email:</strong> ${mappedData.email}</p>
+      <p><strong>Telefone:</strong> ${mappedData.telefone}</p>
+      <p><strong>Cidade/Estado:</strong> ${mappedData.cidade}</p>
+      <p><strong>Profissão:</strong> ${mappedData.profissao}</p>
+      <p><strong>Objetivo:</strong> ${mappedData.objetivo}</p>
+      <p><strong>Fase Atual:</strong> ${mappedData.fase}</p>
 
-    <h3>Informações do Projeto</h3>
-    <p><strong>Terreno:</strong> ${mappedData.terreno}</p>
-    <p><strong>Perfil Familiar:</strong> ${mappedData.perfilFamiliar}</p>
-    <p><strong>Estilo de Vida:</strong> ${mappedData.estiloVida}</p>
-    <p><strong>Necessidades do Projeto:</strong> ${mappedData.necessidades}</p>
-    <p><strong>Investimento Previsto:</strong> ${mappedData.investimento}</p>
-    <p><strong>Expectativas:</strong> ${mappedData.expectativas}</p>
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">2. O Terreno</h3>
+      <p><strong>Detalhes Base:</strong> ${mappedData.terreno}</p>
+      <p><strong>Orientação Solar:</strong> ${mappedData.orientacaoSolar}</p>
+      <p><strong>Ventilação:</strong> ${mappedData.ventilacao}</p>
+      <p><strong>Restrições do Lote:</strong> ${mappedData.restricoes}</p>
+
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">3. Dinâmica Familiar</h3>
+      <p><strong>Moradores:</strong> ${mappedData.perfilFamiliar}</p>
+      <p><strong>Home Office:</strong> ${mappedData.homeOffice}</p>
+      <p><strong>Frequência de Visitas:</strong> ${mappedData.visitas}</p>
+
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">4. Estilo de Arquitetura</h3>
+      <p><strong>Estilo Desejado:</strong> ${mappedData.estilo}</p>
+      <p><strong>Personalização:</strong> ${mappedData.personalizacao}</p>
+      <p><strong>Referências Visuais:</strong> ${mappedData.referencias}</p>
+
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">5. Escopo e Necessidades</h3>
+      <p><strong>Composição:</strong> ${mappedData.necessidades}</p>
+      <p><strong>Ambientes Extras:</strong> ${mappedData.ambientesExtras}</p>
+      <p><strong>Vagas de Garagem:</strong> ${mappedData.vagas}</p>
+
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">6. Conforto e Tecnologia</h3>
+      <p><strong>Climatização:</strong> ${mappedData.clima}</p>
+      <p><strong>Automação:</strong> ${mappedData.automacao}</p>
+      <p><strong>Isolamento Acústico:</strong> ${mappedData.acustica}</p>
+
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">7. Orçamento e Prazos</h3>
+      <p><strong>Investimento Estimado:</strong> ${mappedData.investimento}</p>
+      <p><strong>Flexibilidade Orçamentária:</strong> ${mappedData.flexibilidade}</p>
+      <p><strong>Prazo para Iniciarmos:</strong> ${mappedData.prazoInicio}</p>
+      <p><strong>Cronograma Desejado de Fim:</strong> ${mappedData.prazoFim}</p>
+
+      <h3 style="background: #f3f4f6; padding: 8px; border-radius: 4px;">8. Prioridades e Sonhos</h3>
+      <p><strong>Foco #1 Inegociável:</strong> ${mappedData.prioridadeMor}</p>
+      <p><strong>O que NÃO ter no projeto:</strong> ${mappedData.indesejados}</p>
+      <p><strong>O Projeto dos Sonhos:</strong> ${mappedData.expectativas}</p>
+      <p><strong>Solicitou reunião inicial:</strong> ${mappedData.reuniao}</p>
+    </div>
   `;
 
   const mailOptions = {

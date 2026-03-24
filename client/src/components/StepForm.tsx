@@ -15,14 +15,33 @@ interface FormData {
   hasLand: string;
   landArea: string;
   topography: string;
+  solarOrientation: string;
+  naturalVentilation: string;
+  landRestrictions: string[];
   familyMembers: string;
   hasChildren: string;
   hasPets: string;
+  worksFromHome: string;
+  homeOfficeNeeds: string;
+  visitFrequency: string;
+  architecturalStyle: string;
+  visualReferences: string;
+  customizationLevel: string;
   bedrooms: string;
   bathrooms: string;
+  suites: string;
+  extraRooms: string[];
+  garageSpots: string;
+  climateControl: string;
+  homeAutomation: string;
+  acousticIsolation: string;
   budget: string;
-  idealHouse: string;
-  desiredFeeling: string;
+  budgetFlexibility: string;
+  startDeadline: string;
+  completionDeadline: string;
+  mainPriority: string;
+  undesiredFeatures: string;
+  dreamProject: string;
   wantsMeeting: string;
 }
 
@@ -35,17 +54,23 @@ const STEPS = [
   { id: 2, title: 'Contato', icon: '👤' },
   { id: 3, title: 'Terreno', icon: '🏗️' },
   { id: 4, title: 'Família', icon: '👨‍👩‍👧‍👦' },
-  { id: 5, title: 'Necessidades', icon: '🏠' },
-  { id: 6, title: 'Expectativas', icon: '✨' },
+  { id: 5, title: 'Estilo', icon: '🎨' },
+  { id: 6, title: 'Necessidades', icon: '🏠' },
+  { id: 7, title: 'Conforto', icon: '🌡️' },
+  { id: 8, title: 'Orçamento', icon: '💰' },
+  { id: 9, title: 'Prioridades', icon: '✨' },
 ];
 
 const REQUIRED_FIELDS: Record<number, string[]> = {
   1: ['objective', 'phase', 'timeline'],
   2: ['clientName', 'clientPhone', 'clientEmail', 'clientCity'],
-  3: ['hasLand', 'landArea'],
+  3: ['hasLand'],
   4: ['familyMembers', 'hasChildren'],
-  5: ['bedrooms', 'bathrooms', 'budget'],
-  6: ['idealHouse', 'wantsMeeting'],
+  5: ['architecturalStyle'],
+  6: ['bedrooms', 'bathrooms', 'suites'],
+  7: ['climateControl'],
+  8: ['budget'],
+  9: ['dreamProject', 'wantsMeeting'],
 };
 
 const FormContext = React.createContext<any>(null);
@@ -58,9 +83,13 @@ const FormField: React.FC<{
   required?: boolean;
   options?: string[];
   helpText?: string;
-}> = ({ label, type = 'text', field, placeholder, required = false, options, helpText }) => {
+  condition?: boolean;
+}> = ({ label, type = 'text', field, placeholder, required = false, options, helpText, condition }) => {
+  if (condition === false) return null;
+
   const { formData, handleInputChange, errors, touchedFields, setTouchedFields } = React.useContext(FormContext);
   const hasError = errors[field] && touchedFields.has(field);
+  const value = formData[field as keyof FormData];
   
   return (
     <div className="mb-6">
@@ -68,10 +97,40 @@ const FormField: React.FC<{
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </label>
-      {options ? (
+      {type === 'checkbox-group' && options ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          {options.map(opt => {
+            const currentArr = (value as string[]) || [];
+            const isChecked = currentArr.includes(opt);
+            return (
+              <label key={opt} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+                <input 
+                  type="checkbox"
+                  className="w-5 h-5 rounded border-secondary text-primary focus:ring-primary shadow-sm"
+                  checked={isChecked}
+                  onChange={(e) => {
+                    let newArr = [...currentArr];
+                    if (e.target.checked) {
+                      if (opt === 'Nenhuma') newArr = ['Nenhuma'];
+                      else {
+                        newArr = newArr.filter(item => item !== 'Nenhuma');
+                        newArr.push(opt);
+                      }
+                    } else {
+                      newArr = newArr.filter(item => item !== opt);
+                    }
+                    handleInputChange(field, newArr);
+                  }}
+                />
+                <span className="text-secondary-foreground font-medium text-sm">{opt}</span>
+              </label>
+            );
+          })}
+        </div>
+      ) : options ? (
         <select
           className={`form-select ${hasError ? 'border-destructive' : ''}`}
-          value={formData[field as keyof FormData] as string}
+          value={value as string}
           onChange={(e) => handleInputChange(field, e.target.value)}
           onBlur={() => setTouchedFields((prev: Set<string>) => new Set(prev).add(field))}
         >
@@ -85,7 +144,7 @@ const FormField: React.FC<{
           className={`form-textarea ${hasError ? 'border-destructive' : ''}`}
           placeholder={placeholder}
           rows={4}
-          value={formData[field as keyof FormData] as string}
+          value={value as string}
           onChange={(e) => handleInputChange(field, e.target.value)}
           onBlur={() => setTouchedFields((prev: Set<string>) => new Set(prev).add(field))}
         />
@@ -94,16 +153,16 @@ const FormField: React.FC<{
           type={type}
           className={`form-input ${hasError ? 'border-destructive' : ''}`}
           placeholder={placeholder}
-          value={formData[field as keyof FormData] as string}
+          value={value as string}
           onChange={(e) => handleInputChange(field, e.target.value)}
           onBlur={() => setTouchedFields((prev: Set<string>) => new Set(prev).add(field))}
         />
       )}
       {helpText && !hasError && (
-        <p className="text-xs text-muted-foreground mt-1">{helpText}</p>
+        <p className="text-xs text-muted-foreground mt-2">{helpText}</p>
       )}
       {hasError && (
-        <div className="flex items-center gap-2 mt-2 text-destructive text-sm">
+        <div className="flex items-center gap-2 mt-2 text-destructive text-sm font-medium">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{errors[field]}</span>
         </div>
@@ -115,7 +174,8 @@ const FormField: React.FC<{
 
 export const StepForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({
+
+  const defaultValues: FormData = {
     objective: 'Construir para morar',
     phase: 'Apenas pesquisando ideias',
     timeline: 'Ainda sem previsão',
@@ -126,37 +186,55 @@ export const StepForm: React.FC = () => {
     clientProfession: '',
     hasLand: 'Não',
     landArea: '',
-    topography: '',
+    topography: 'Plano',
+    solarOrientation: 'Não sei',
+    naturalVentilation: 'Não sei',
+    landRestrictions: [],
     familyMembers: '2',
     hasChildren: 'Não',
     hasPets: 'Não',
+    worksFromHome: 'Não',
+    homeOfficeNeeds: 'Não',
+    visitFrequency: 'Ocasionalmente',
+    architecturalStyle: 'Contemporâneo',
+    visualReferences: '',
+    customizationLevel: 'Equilibrado',
     bedrooms: '3',
     bathrooms: '2',
+    suites: '1',
+    extraRooms: [],
+    garageSpots: '2',
+    climateControl: 'Ar-condicionado',
+    homeAutomation: 'Não',
+    acousticIsolation: 'Não',
     budget: 'Até R$ 500 mil',
-    idealHouse: '',
-    desiredFeeling: '',
+    budgetFlexibility: 'Sim',
+    startDeadline: 'Ainda sem previsão',
+    completionDeadline: 'Ainda sem previsão',
+    mainPriority: 'Conforto',
+    undesiredFeatures: '',
+    dreamProject: '',
     wantsMeeting: 'Sim',
-  });
+  };
 
+  const [formData, setFormData] = useState<FormData>(defaultValues);
   const [errors, setErrors] = useState<FormErrors>({});
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
-  // Load saved data from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('briefingFormData');
     if (saved) {
       try {
         const parsedData = JSON.parse(saved);
-        setFormData(parsedData);
+        setFormData({ ...defaultValues, ...parsedData });
       } catch (e) {
         console.error('Error loading saved form data:', e);
       }
     }
   }, []);
 
-  // Auto-save to localStorage
   useEffect(() => {
     localStorage.setItem('briefingFormData', JSON.stringify(formData));
   }, [formData]);
@@ -184,7 +262,9 @@ export const StepForm: React.FC = () => {
 
     requiredFields.forEach(field => {
       const value = formData[field as keyof FormData];
-      if (!value || value.toString().trim() === '') {
+      if (Array.isArray(value)) {
+         if (value.length === 0) stepErrors[field] = 'Selecione ao menos uma opção';
+      } else if (!value || value.toString().trim() === '') {
         stepErrors[field] = 'Campo obrigatório';
       }
     });
@@ -205,8 +285,8 @@ export const StepForm: React.FC = () => {
     return Object.keys(stepErrors).length === 0;
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    if (field === 'clientPhone') {
+  const handleInputChange = (field: string, value: string | string[]) => {
+    if (field === 'clientPhone' && typeof value === 'string') {
       value = formatPhone(value);
     }
 
@@ -237,6 +317,7 @@ export const StepForm: React.FC = () => {
         setCompletedSteps([...completedSteps, currentStep]);
       }
       if (currentStep < STEPS.length) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         setCurrentStep(currentStep + 1);
       }
     }
@@ -244,6 +325,7 @@ export const StepForm: React.FC = () => {
 
   const handlePrevious = () => {
     if (currentStep > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setCurrentStep(currentStep - 1);
     }
   };
@@ -264,37 +346,15 @@ export const StepForm: React.FC = () => {
           throw new Error(result.message || 'Erro ao enviar formulário');
         }
         
-        console.log('Form submitted:', formData);
-        
-        toast.success(result.message || 'Recebemos suas informações. Em breve entraremos em contato para dar início ao seu projeto exclusivo.');
+        toast.success(result.message || 'Recebemos suas informações. Entraremos em contato em breve.');
         
         setTimeout(() => {
-          setFormData({
-            objective: 'Construir para morar',
-            phase: 'Apenas pesquisando ideias',
-            timeline: 'Ainda sem previsão',
-            clientName: '',
-            clientPhone: '',
-            clientEmail: '',
-            clientCity: '',
-            clientProfession: '',
-            hasLand: 'Não',
-            landArea: '',
-            topography: '',
-            familyMembers: '2',
-            hasChildren: 'Não',
-            hasPets: 'Não',
-            bedrooms: '3',
-            bathrooms: '2',
-            budget: 'Até R$ 500 mil',
-            idealHouse: '',
-            desiredFeeling: '',
-            wantsMeeting: 'Sim',
-          });
+          setFormData(defaultValues);
           setCurrentStep(1);
           setCompletedSteps([]);
           setTouchedFields(new Set());
           localStorage.removeItem('briefingFormData');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }, 2000);
       } catch (error: any) {
         toast.error(error.message || 'Erro ao enviar formulário. Tente novamente.');
@@ -308,8 +368,8 @@ export const StepForm: React.FC = () => {
     <FormContext.Provider value={{ formData, handleInputChange, errors, touchedFields, setTouchedFields }}>
     <div className="w-full">
       {/* Tabs */}
-      <div className="mb-8 overflow-x-auto pb-2">
-        <div className="flex gap-2 min-w-min">
+      <div className="mb-8 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex gap-2 w-max px-1">
           {STEPS.map((step) => (
             <button
               key={step.id}
@@ -317,16 +377,16 @@ export const StepForm: React.FC = () => {
               disabled={step.id > currentStep && !completedSteps.includes(step.id)}
               className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 font-medium text-sm whitespace-nowrap ${
                 step.id === currentStep
-                  ? 'bg-primary text-primary-foreground shadow-md'
+                  ? 'bg-primary text-primary-foreground shadow-md scale-105 origin-left'
                   : completedSteps.includes(step.id)
                   ? 'bg-accent text-accent-foreground cursor-pointer hover:shadow-md'
                   : 'bg-secondary text-secondary-foreground cursor-not-allowed opacity-50'
               }`}
             >
-              <span className="text-lg">{step.icon}</span>
-              <span>{step.title}</span>
+               <span className="text-lg">{step.icon}</span>
+              <span className="hidden sm:inline sm:text-sm text-xs">{step.title}</span>
               {completedSteps.includes(step.id) && step.id !== currentStep && (
-                <CheckCircle2 className="w-4 h-4 ml-1" />
+                <CheckCircle2 className="w-4 h-4 ml-1 text-green-500" />
               )}
             </button>
           ))}
@@ -406,17 +466,32 @@ export const StepForm: React.FC = () => {
               options={['Sim', 'Não']} 
             />
             <FormField 
-              label="Área total (m²)" 
+              label="Área total do terreno (m²)" 
               field="landArea" 
               type="number" 
-              required 
-              placeholder="500"
-              helpText="Deixe em branco se ainda não tem terreno"
+              placeholder="Ex: 500"
+              helpText="Deixe em branco se ainda não possui proporções do terreno"
             />
             <FormField 
               label="Topografia" 
               field="topography" 
-              options={['Plano', 'Aclive', 'Declive']} 
+              options={['Plano', 'Aclive', 'Declive', 'Não sei']} 
+            />
+            <FormField 
+              label="Orientação solar" 
+              field="solarOrientation" 
+              options={['Sim (Já mapeada)', 'Não analisada', 'Não sei o que é']} 
+            />
+            <FormField 
+              label="Ventilação natural do local" 
+              field="naturalVentilation" 
+              options={['Boa', 'Média', 'Ruim', 'Não sei']} 
+            />
+            <FormField 
+              label="Restrições do terreno / bairro" 
+              field="landRestrictions" 
+              type="checkbox-group"
+              options={['Condomínio', 'Prefeitura (Gabaritos rígidos)', 'Área de preservação', 'Nenhuma restrição aparente', 'Outro']} 
             />
           </div>
         )}
@@ -441,59 +516,159 @@ export const StepForm: React.FC = () => {
             <FormField 
               label="Possui pets?" 
               field="hasPets" 
-              options={['Sim', 'Não']} 
+              options={['Sim, cachorros', 'Sim, gatos', 'Outros pets', 'Não possuem']} 
+            />
+            <FormField 
+              label="Alguém da família trabalha em casa?" 
+              field="worksFromHome" 
+              options={['Sim, 100% Home Office', 'Sim, modelo Híbrido', 'Não']} 
+            />
+            <FormField 
+              label="Necessidade de espaço de Home Office dedicado?" 
+              field="homeOfficeNeeds" 
+              options={['Sim, escritório isolado', 'Sim, integrado a outro ambiente', 'Não, faço na mesa de jantar/quarto', 'Não preciso']} 
+            />
+            <FormField 
+              label="Frequência de recepcionar visitas/eventos" 
+              field="visitFrequency" 
+              options={['Raramente', 'Ocasionalmente (pequenos grupos)', 'Frequentemente (Adoro receber gente!)']} 
             />
           </div>
         )}
 
-        {/* Step 5: Necessidades */}
+        {/* Step 5: Estilo e Referências */}
         {currentStep === 5 && (
           <div className="space-y-4">
             <FormField 
-              label="Número de dormitórios" 
+              label="Qual estilo arquitetônico mais lhe atrai?" 
+              field="architecturalStyle" 
+              options={['Moderno (Linhas retas, vãos livres)', 'Contemporâneo (Última tendência)', 'Clássico / Neoclássico', 'Minimalista (Menos é mais)', 'Industrial (Aço, tijolo aparente)', 'Rústico / Fazenda', 'Não tenho certeza / Outro']} 
+              required
+            />
+            <FormField 
+              label="Links ou imagens de referência (Pinterest, Instagram)" 
+              field="visualReferences" 
+              type="textarea"
+              placeholder="Cole os links de inspiração aqui para facilitar o nosso alinhamento visual..." 
+            />
+            <FormField 
+              label="Nível de personalização desejado" 
+              field="customizationLevel" 
+              options={['Econômico e prático (padrão)', 'Equilibrado (alguns toques luxuosos)', 'Alto padrão / Exclusivo (Design assinado)']} 
+            />
+          </div>
+        )}
+
+        {/* Step 6: Necessidades */}
+        {currentStep === 6 && (
+          <div className="space-y-4">
+            <FormField 
+              label="Quantidade total de dormitórios" 
               field="bedrooms" 
               type="number" 
               required 
-              placeholder="3"
+              placeholder="Ex: 3"
+            />
+             <FormField 
+              label="Quantos desses dormitórios serão suítes?" 
+              field="suites" 
+              type="number" 
+              required 
+              placeholder="Ex: 1"
             />
             <FormField 
-              label="Número de banheiros" 
+              label="Quantidade total de banheiros (incluindo lavabos)" 
               field="bathrooms" 
               type="number" 
               required 
-              placeholder="2"
+              placeholder="Ex: 2"
             />
             <FormField 
-              label="Orçamento previsto" 
+              label="Quais ambientes extras a casa DEVE ter?" 
+              field="extraRooms" 
+              type="checkbox-group"
+              options={['Closet', 'Lavabo', 'Área Gourmet / Churrasqueira', 'Piscina / Ofurô', 'Lavanderia Coberta Separada', 'Depósito / Dispensa', 'Garagem Coberta']} 
+            />
+            <FormField 
+              label="Quantidade de vagas de garagem coberta" 
+              field="garageSpots" 
+              type="number"
+              placeholder="Ex: 2"
+              condition={formData.extraRooms.includes('Garagem Coberta')}
+            />
+          </div>
+        )}
+
+        {/* Step 7: Conforto e Tecnologia */}
+        {currentStep === 7 && (
+          <div className="space-y-4">
+            <FormField 
+              label="Preferência de Climatização" 
+              field="climateControl" 
+              options={['Previsão para Ar-condicionado em tudo', 'Apenas Ar-condicionado nos quartos', 'Sistemas passivos / Ventilação natural', 'Ambos']} 
+              required
+            />
+            <FormField 
+              label="Planeja Automação Residencial (Sistemas Inteligentes)?" 
+              field="homeAutomation" 
+              options={['Sim, automação completa', 'Apenas itens básicos (Câmeras, Fechaduras)', 'Não por enquanto', 'Não tenho interesse']} 
+            />
+            <FormField 
+              label="Necessidade vital de isolamento acústico?" 
+              field="acousticIsolation" 
+              options={['Sim (Região barulhenta / Estúdio em casa)', 'Moderada', 'Não me preocupo com isso']} 
+            />
+          </div>
+        )}
+
+        {/* Step 8: Orçamento */}
+        {currentStep === 8 && (
+          <div className="space-y-4">
+            <FormField 
+              label="Orçamento previsto para a obra / reforma" 
               field="budget" 
               required 
               options={['Até R$ 500 mil', 'R$ 500 mil a R$ 1 milhão', 'R$ 1M a R$ 2M', 'Acima de R$ 2M']} 
             />
+            <FormField 
+              label="Como está a flexibilidade desse orçamento?" 
+              field="budgetFlexibility" 
+              options={['Altamente flexível, pode subir um pouco', 'Margem pequena de contingência', 'Arrojado. Não pode estourar o teto.']} 
+            />
+            <FormField 
+              label="Qual é o seu prazo MÁXIMO aceitável para o início das obras?" 
+              field="startDeadline" 
+              options={['Imediato (pra ontem!)', 'Dentro de 6 meses', 'Daqui a 1 ano', 'Ainda sem previsão, não tenho pressa']} 
+            />
+            <FormField 
+              label="Prazo desejado para mudar / conclusão da obra" 
+              field="completionDeadline" 
+              options={['O mais rápido humanamente possível', 'Menos de 1 ano', '1 ano e meio a 2 anos', 'A construção ditará o ritmo']} 
+            />
           </div>
         )}
 
-        {/* Step 6: Expectativas */}
-        {currentStep === 6 && (
+        {/* Step 9: Prioridades */}
+        {currentStep === 9 && (
           <div className="space-y-4">
             <FormField 
-              label="O que seria a casa ideal para você?" 
-              field="idealHouse" 
-              type="textarea" 
-              required 
-              placeholder="Descreva seu sonho em detalhes..."
-              helpText="Quanto mais detalhado, melhor compreenderemos sua visão"
+              label="Entre as opções abaixo, qual é INEGOCIÁVEL para você?" 
+              field="mainPriority" 
+              options={['Estética deslumbrante e Design Arquitetônico', 'Custo-benefício extremo (Ficar no orçamento)', 'Conforto Absoluto e Funcionalidade Prática', 'Rapidez na entrega final da obra']} 
             />
             <FormField 
-              label="Qual sensação você quer ao entrar na casa?" 
-              field="desiredFeeling" 
-              type="textarea" 
-              placeholder="Ex: Aconchego, modernidade, tranquilidade..."
+              label="O que você NÃO deseja no seu projeto de jeito nenhum?" 
+              field="undesiredFeatures" 
+              type="textarea"
+              placeholder="Ex: Escadas difíceis, janelas pequenas, estilo rebuscado, corredores longos..." 
             />
             <FormField 
-              label="Gostaria de agendar uma reunião?" 
-              field="wantsMeeting" 
+              label="Para finalizar: Descreva o projeto dos seus sonhos" 
+              field="dreamProject" 
+              type="textarea" 
               required 
-              options={['Sim', 'Não']} 
+              placeholder="Nos conte tudo o que você sempre imaginou para esse espaço... Sem filtros."
+              helpText="Ao clicar em Enviar, nossa arquitetura avaliará todo seu escopo a fundo!"
             />
           </div>
         )}
@@ -519,10 +694,10 @@ export const StepForm: React.FC = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Enviando...
+                Processando...
               </>
             ) : (
-              'Enviar Briefing'
+              'Enviar Relatório Final'
             )}
           </Button>
         ) : (
@@ -538,7 +713,7 @@ export const StepForm: React.FC = () => {
       {/* Form Completion Indicator */}
       {completedSteps.length > 0 && (
         <div className="mt-6 text-center text-sm text-muted-foreground">
-          Progresso: {completedSteps.length} de {STEPS.length} etapas concluídas
+          Progresso: {completedSteps.length} de {STEPS.length} etapas cumpridas
         </div>
       )}
     </div>
