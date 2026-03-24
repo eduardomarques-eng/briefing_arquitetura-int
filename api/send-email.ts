@@ -1,29 +1,34 @@
 import nodemailer from 'nodemailer';
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '587');
+async function sendEmail(data: any) {
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const fromEmail = process.env.SMTP_FROM || user;
 
-  if (!user || !pass) {
-    console.error('❌ Erro Crítico Vercel: Variáveis de Ambiente ausentes. Registre SMTP_USER e SMTP_PASS nas configurações do projeto.');
-    return res.status(500).json({ success: false, message: 'Sistema indisponível: Configuração SMTP ausente.' });
+  // Log rigoroso das chaves para debug no painel da Vercel
+  console.log("=== DIAGNÓSTICO SMTP VERCEL ===");
+  console.log("SMTP_HOST:", host);
+  console.log("SMTP_PORT:", port);
+  console.log("SMTP_USER:", user ? "Configurado (Oculto)" : "AUSENTE");
+  console.log("SMTP_PASS:", pass ? "Configurado (Oculto)" : "AUSENTE");
+  console.log("SMTP_FROM:", fromEmail);
+  console.log("===============================");
+
+  if (!host || !port || !user || !pass) {
+    throw new Error('Configuração SMTP incompleta');
   }
 
   const transporter = nodemailer.createTransport({
     host: host,
-    port: port,
-    secure: port === 465,
-    auth: { user, pass }
+    port: parseInt(port),
+    secure: parseInt(port) === 465,
+    auth: {
+      user: user,
+      pass: pass
+    }
   });
-
-  const data = req.body || {};
 
   const mappedData = {
     nome: data.clientName || 'Não informado',
@@ -128,17 +133,32 @@ export default async function handler(req: any, res: any) {
   `;
 
   const mailOptions = {
-    from: '"Briefing Arquitetura" <' + user + '>',
+    from: `"Briefing Arquitetura" <${fromEmail}>`,
     to: user,
     subject: 'Novo briefing recebido – ' + (mappedData.nome || 'Cliente') + ' – ' + new Date().toLocaleDateString('pt-BR'),
     html: html
   };
 
+  await transporter.sendMail(mailOptions);
+}
+
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
   try {
-    await transporter.sendMail(mailOptions);
+    const data = req.body || {};
+    await sendEmail(data);
     return res.status(200).json({ success: true, message: "Recebemos suas informações. Em breve entraremos em contato para dar início ao seu projeto exclusivo." });
   } catch (error: any) {
-    console.error('Erro SMTP na Vercel:', error);
+    console.error('Erro no disparador de email da Vercel:', error);
+    
+    // Devolver erro SMTP incompleto perfeitamente padronizado
+    if (error.message === 'Configuração SMTP incompleta') {
+      return res.status(500).json({ success: false, message: 'Configuração SMTP incompleta' });
+    }
+
     return res.status(500).json({ success: false, message: error.message || "Falha ao enviar." });
   }
 }

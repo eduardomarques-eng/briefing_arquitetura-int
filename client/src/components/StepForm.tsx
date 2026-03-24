@@ -334,7 +334,7 @@ export const StepForm: React.FC = () => {
     if (validateStep(currentStep)) {
       setIsSubmitting(true);
       try {
-        const response = await fetch('/api/briefing', {
+        const response = await fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
